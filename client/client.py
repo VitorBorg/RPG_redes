@@ -31,7 +31,6 @@ def receiveMessages(client):
             client.close()
             break
             
-
 def sendMessages(client, username):
     while True:
         try:

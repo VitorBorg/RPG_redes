@@ -34,12 +34,13 @@ def broadcast(msg, client):
     for clientItem in clients:
         if clientItem != client:
             try:
-                clientItem.send(msg)
+                clientItem.send(msg)            
             except:
                 deleteClient(clientItem)
 
 
 def deleteClient(client):
     clients.remove(client)
+
 
 network()
