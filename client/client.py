@@ -1,6 +1,8 @@
 import threading
 import socket
 
+currentType = '0'
+
 def network():
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -10,11 +12,11 @@ def network():
     except:
         return print('\nNão foi possívvel se conectar ao servidor!\n')
 
-    username = input('Usuário> ')
+    #username = input('Usuário> ')
     print('\nConectado')
 
     thread1 = threading.Thread(target=receiveMessages, args=[client])
-    thread2 = threading.Thread(target=sendMessages, args=[client, username])
+    thread2 = threading.Thread(target=sendMessages, args=[client])
 
     thread1.start()
     thread2.start()
@@ -23,7 +25,7 @@ def network():
 def receiveMessages(client):
     while True:
         try:
-            msg = client.recv(2048).decode('utf-8')
+            msg = client.recv(1024).decode('utf-8')
             print(msg+'\n')
         except:
             print('\nNão foi possível permanecer conectado no servidor!\n')
@@ -31,13 +33,35 @@ def receiveMessages(client):
             client.close()
             break
             
-def sendMessages(client, username):
+def sendMessages(client):
     while True:
         try:
             msg = input('\n')
-            client.send(f'<{username}> {msg}'.encode('utf-8'))
+
+            if currentType == 2:
+                send = messageGETT(msg)
+            elif currentType == 1
+                send = messageGAME(msg)
+            else:
+                send = messageINIT(msg)
+
+            client.send(send.encode('utf-8'))
         except:
             return
 
+#WRITING PROTOCOL MESSAGES
+#MESSAGE TO UPDATE CLIENT DATA - UPDATE
+def messageUPDT(msg):
+    return ('UPDT' + msg)
+
+#MESSAGE TO ACTION - SET
+#FLAGS:INITIAL SETUP, MOVEMENT, FIGHT, ITEMS FROM BACKPACK
+def messageGAME(msg):
+    return ('ACTN' + msg)
+
+#MESSAGE TO GET INFORMATION ABOUT THE CURRENT GAME STATUS - GET
+#FLAGS: BOARD, AREA, ROOM, STATS, ITEMS, OTHERS PLAYERS...
+def messageINFO(msg):
+    return ('INFO' + msg)
 
 network()
