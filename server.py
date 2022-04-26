@@ -1,7 +1,8 @@
 import threading
 import socket
-from game.player import player
+from game.system.player import player
 from game.actors.character import character
+from game.system.rpg import rpg
 
 
 clients = []
@@ -69,6 +70,9 @@ def network():
 
 def game():
 
+    #rpgGame = rpg('A Mansão')
+    #rpgGame.play()
+    
     sendMessageToAllClients('\n\nJOGO INICIADO!\n\n')
 
     players = []

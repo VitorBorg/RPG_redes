@@ -1,8 +1,6 @@
 import threading
 import socket
 
-currentType = '0'
-
 def network():
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -38,11 +36,13 @@ def sendMessages(client):
         try:
             msg = input('\n')
 
-            if currentType == 2:
+            if msg == 2:
                 send = messageGETT(msg)
-            elif currentType == 1
+            elif msg == 1:
                 send = messageGAME(msg)
-            else:
+            elif msg == 0:
+                while msg == 0:
+                    msg = input('\n')
                 send = messageINIT(msg)
 
             client.send(send.encode('utf-8'))
