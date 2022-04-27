@@ -5,8 +5,8 @@ class player():
         self.pos = ["area", "room"]
 
     def setPos(self, newPos):
-        self.pos.insert(0, newPos[0])
-        self.pos.insert(1, newPos[1])
+        self.pos[0] = newPos[0]
+        self.pos[1] = newPos[1]
     
     def getCharac(self):
         return self.charac

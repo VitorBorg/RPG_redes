@@ -1,17 +1,20 @@
 import threading
 import socket
+import time
 from game.system.player import player
 from game.actors.character import character
 from game.system.rpg import rpg
+from game.utils.utils import utils
 
 
 clients = []
+rpgGame = rpg('O castelo')
 
 def messagesTreatment(client):
     while True:
         try:
             msg = client.recv(1024)
-            broadcast(msg, client)
+            readingProtocol(msg, client)
         except:
             deleteClient(client)
             break
@@ -58,9 +61,11 @@ def network():
         client, addr = server.accept()
         clients.append(client)
 
+        #INITIAL MESSAGES
         print(f'Cliente conectado! {len(clients)}/2 usuários!\n')
-        sendMessageToClient(f'Você entrou no lobby! Você é o usuário: {len(clients)}!\n', client)
+        sendMessageToClient(messageWrite('TEXT', "", "", f'Você entrou no lobby! Você é o usuário: {len(clients)}!\n'), client)
 
+        #THREADS
         thread = threading.Thread(target=messagesTreatment, args=[client])
         thread.start()
 
@@ -69,44 +74,56 @@ def network():
             thread.start()
 
 def game():
+    #mensagem inicial
+    sendMessageToAllClients(messageWrite('TEXT', "", "", rpgGame.play()))
+    #mensagem de criacao de personagens
+    #descriptionChar = ''
+    #for char in rpgGame.getCharacters():
+    #    descriptionChar += f'\nSTATUS{char.getDescription()}'
 
-    #rpgGame = rpg('A Mansão')
-    #rpgGame.play()
-    
-    sendMessageToAllClients('\n\nJOGO INICIADO!\n\n')
+    sendMessageToAllClients(messageWrite('INFO', '', 'characters', ''))
 
-    players = []
-    characters = []
-
-    characters.append(character('Adalto', 'Atirador', '7', '3', '22', '1', '14', '6'))
-    characters.append(character('Luizinho', 'Suporte', '11', '6', '15', '1', '7', '12'))
-    characters.append(character('Dudu', 'Tanque', '6', '0', '55', '28', '9', '0'))
-    characters.append(character('Nati', 'Mago', '5', '2', '25', '0', '6', '55'))
-
-    for char in characters:
-        sendMessageToAllClients(f'\nSTATUS{char.getDescription()}')
-    
-    sendMessageToAllClients('\n\nEscolha seu personagem: ')
-
-    while True and len(players) != 2:
+    while len(rpgGame.getPlayers()) < 2:
         temp = ''
 
     
-
+    #inicio real do jogo
+    print('JOGO INICIANDO')
     while True:
         temp = ''
 
 #READING PROTOCOL MESSAGES
-def message(msg):
+def readingProtocol(msg, client):
     typeMsg = msg[0:4]
 
-    if typeMsg == 'ACTN':
+    if typeMsg == 'UPDT':
+        messageUPDT(msg[4:len(msg)-1], client)
+    elif typeMsg == 'TEXT':
+        messageTEXT(msg[4:len(msg)-1])
+    elif typeMsg == 'EXIT':
         pass
-    elif typeMsg == 'GETT':
-        pass
-    elif typeMsg == 'SETP':
-        pass
-        
 
+def messageUPDT(msg, client):
+    name = msg[0:20]
+    classe = msg[20:40]
+    action = msg[40:42]
+    space = msg[42:44]
+    life = msg[44:46]
+    strength = msg[46:48]
+    intelligence = msg[48:50]
+
+    newPlayer = player(character(name, classe, action, space, life, strength, intelligence), client)
+    rpgGame.addPlayer(newPlayer)
+    #writingProtocol(codes, menuMsg, client)
+        
+#SEND PROTOCOL MESSAGES
+def messageWrite(code, flags, menuOption, msg):
+    menu = rpgGame.menuPrint(menuOption)
+
+    if code == 'INFO':
+        #CODIGO DA MENSAGEM, MENU DO JOGO, CORPO DO TEXTO
+        return (code + ('{:<100}'.format(menu)) + ('{:<500}'.format(msg)))
+    elif code == 'TEXT':
+        return (code + msg)
 
 network()
