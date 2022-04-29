@@ -4,6 +4,7 @@ import time
 
 from game.utils.utils import utils
 
+DATASIZE = 2048
 
 def network():
 
@@ -18,16 +19,16 @@ def network():
     print('\nConectado')
 
     thread1 = threading.Thread(target=receiveMessages, args=[client])
-    thread2 = threading.Thread(target=sendMessages, args=['',client])
+    #thread2 = threading.Thread(target=sendMessages, args=['',client])
 
     thread1.start()
-    thread2.start()
+    #thread2.start()
 
 
 def receiveMessages(client):
     while True:
         try:
-            msg = client.recv(1024).decode('utf-8')
+            msg = client.recv(DATASIZE).decode('utf-8')
             #print(msg)
             readingProtocol(msg, client)
         except:
@@ -40,17 +41,19 @@ def sendMessages(msg, client):
     while True:
         try:
             client.send(msg.encode('utf-8'))
+            break
         except:
             return
 
 #READING PROTOCOL MESSAGES
 def readingProtocol(msg, client):
     typeMsg = msg[0:4]
+    #print(f'\n ---------------\n DATA RECEBIDA{typeMsg} \n ---------------\n')
 
     if typeMsg == 'INFO':
-        messageINFO(msg[4:len(msg)-1], client)
+        messageINFO(msg[4:len(msg)], client)
     elif typeMsg == 'TEXT':
-        messageTEXT(msg[4:len(msg)-1])
+        messageTEXT(msg[4:len(msg)])
     elif typeMsg == 'EXIT':
         pass
 
@@ -60,12 +63,12 @@ def readingProtocol(msg, client):
 def messageINFO(msg, client):
     menuMsg = msg[0:100]
     #print(f"\n MENUMSG: {menuMsg}")
-    data = msg[100: len(msg)-1]
+    data = msg[100: len(msg)]
     #print(f"\n data = {data}")
     codes = utils.parser(menuMsg)
     #print(f"\n codes = {codes}")
 
-    print('\n' + data + 'n')
+    print(f'\n {data.strip()} \n')
     writingProtocol(codes, menuMsg, client)
 
 def messageTEXT(msg):
@@ -85,7 +88,8 @@ def writingProtocol(codes, menuMsg, client):
                 messageUPDT(client)
                 break
             elif decision == '1':
-                pass
+                messageThreeFields(client, 'MOVE', )
+                break
             elif decision == '2':
                 pass
             elif decision == '3':
@@ -135,12 +139,22 @@ def messageUPDT(client):
         time.sleep(1)
         break
 
-    sendMessages('UPDT' + name + classe + atribute, client)
+    sendMessages(f'UPDT{name}{classe}{atribute[0]}{atribute[1]}{atribute[2]}{atribute[3]}{atribute[4]}', client)
 
 #MESSAGE TO ACTION - SET
 #FLAGS:INITIAL SETUP, MOVEMENT, FIGHT, ITEMS FROM BACKPACK
-def messageGAME(msg):
-    return ('ACTN' + msg)
+
+#MESSAGE TO MOVE THE PLAYER - MOVE
+#MESSAGE TO BATTLE MODE - BATT
+#MESSAGE TO GET THE DATA OR USE SOME ITEM FROM BACKPACK
+def messageThreeFields(client, code, flag, msg):
+     sendMessages(f'{code}{flag}{msg}', client)
+
+#MESSAGE TO RECEIVE INFO ABOUT THE OTHER PLAYER - PART
+#MESSAGE TO FINISH THE ROUND - NEXT
+def messageTwoFields(client, code):
+    flagGetData = '1'
+    sendMessages(f'{code}{flagGetData}', client)
 
 
 network()

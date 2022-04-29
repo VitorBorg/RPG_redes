@@ -1,3 +1,4 @@
+from ast import While
 import threading
 import socket
 import time
@@ -10,11 +11,13 @@ from game.utils.utils import utils
 clients = []
 rpgGame = rpg('O castelo')
 
+DATASIZE = 2048
+
 def messagesTreatment(client):
     while True:
         try:
-            msg = client.recv(1024)
-            readingProtocol(msg, client)
+            msg = client.recv(DATASIZE)
+            readingProtocol(msg.decode('utf-8'), client)
         except:
             deleteClient(client)
             break
@@ -54,6 +57,7 @@ def network():
         server.bind(('localhost', 7777))
         server.listen()
         print('\nServidor iniciado. Aguardando jogadores.\n')
+        sentence = 'testando a porra do split'
     except:
         return print('\nNão foi possível iniciar o servidor!\n')
 
@@ -77,29 +81,46 @@ def game():
     #mensagem inicial
     sendMessageToAllClients(messageWrite('TEXT', "", "", rpgGame.play()))
     #mensagem de criacao de personagens
-    #descriptionChar = ''
-    #for char in rpgGame.getCharacters():
-    #    descriptionChar += f'\nSTATUS{char.getDescription()}'
-
     sendMessageToAllClients(messageWrite('INFO', '', 'characters', ''))
 
+    #loop da criacao de personagem
     while len(rpgGame.getPlayers()) < 2:
-        temp = ''
+        time.sleep(5)
+        print(f'Aguardando jogadores... {len(rpgGame.getPlayers())} de 2 players prontos.')
 
     
     #inicio real do jogo
-    print('JOGO INICIANDO')
+    print('Jogadores cadastrados...')
+    time.sleep(2)
+
+    #storytext = rpgGame.story()
+
+    #for line in storytext:
+    #    sendMessageToAllClients(messageWrite('TEXT', "", "", line[0]))
+    #    time.sleep(line[1])
+
     while True:
-        temp = ''
+        turn = rpgGame.getTurn()
+
+        if turn == 0 or turn == 1:
+            sendMessageToAllClients(messageWrite('TEXT', "", "", 'Rodada de algum jogador'))
+            sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
+            while True:
+                sendMessageToClient(messageWrite('INFO', '', 'default', rpgGame.dataPrint('default', turn)), rpgGame.getPlayers()[turn].client)
+        else:
+            sendMessageToAllClients(messageWrite('TEXT', "", "", 'Rodada de inimigos'))
+
+        time.sleep(20)
+        print('\nJOGO RODANDO')
 
 #READING PROTOCOL MESSAGES
 def readingProtocol(msg, client):
     typeMsg = msg[0:4]
 
     if typeMsg == 'UPDT':
-        messageUPDT(msg[4:len(msg)-1], client)
+        messageUPDT(msg[4:len(msg)], client)
     elif typeMsg == 'TEXT':
-        messageTEXT(msg[4:len(msg)-1])
+        messageTEXT(msg[4:len(msg)])
     elif typeMsg == 'EXIT':
         pass
 

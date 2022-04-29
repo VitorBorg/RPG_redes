@@ -2,7 +2,12 @@ class player():
     def __init__(self, charac, client):
         self.charac = charac
         self.client = client
-        self.pos = ["area", "room"]
+        self.life = 0
+        self.action = 0
+        self.pos = ["O castelo", "Saguão principal"]
+
+    def setAction(self, value):
+        self.action = value
 
     def setPos(self, newPos):
         self.pos[0] = newPos[0]
