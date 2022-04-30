@@ -71,6 +71,11 @@ class rpg:
     def getPlayers(self):
         return self.players
 
+    def findPlayer(self, client):
+        for c in self.players:
+            if players[c].client == client:
+                return c
+
     def getCharacters(self):
         return self.characters
 
@@ -90,11 +95,10 @@ class rpg:
     def getTurn(self):
         return self.boardTurn
 
-    #MENU DE ESCOLHAS
-    #1. MOVIMENTAR
-    #2. COMBATE
-    #3. ITEMS NA MOCHILA
+    def getAreas(self):
+        return self.area
 
+    #MENU DE ESCOLHAS
     def menuPrint(self, menu):
         #padrao
         if menu == 'default':
@@ -102,20 +106,39 @@ class rpg:
         #RODADA DE SELECAO DE PERSONAGEM
         elif menu == 'characters':
             return ('0.Criar personagem')
-        #RODADA DE MOVIMENTACAO
-        #RODADA DE USO DE ITENS NA MOCHILA
-        #RODADA DE COMBATE
 
     def dataPrint(self, data, num):
         if data == 'default':
 
-            indexArea = utils.getIndexArea(self.area, self.players[num].pos[0])
-            indexRoom = utils.getIndexRoom(self.area[indexArea].room, self.players[num].pos[1])
+            indexArea = utils.getIndexArea(self.area, self.players[num].getPos()[0])
+            indexRoom = utils.getIndexRoom(self.area[indexArea].room, self.players[num].getPos()[1])
             
             roomData = self.area[indexArea].room[indexRoom]
             roomEnemys = 'Onde, aparentemente, não há inimigos.'
             if len(roomData.getEnemy()) > 0:
                 roomEnemys = f'Onde tem {len(roomData.getEnemy())} {roomData.getEnemy()[0].getName()}.'
 
-            return(f'Você está na {self.players[num].pos[1]}, na area {self.players[num].pos[0]}. {roomEnemys}')
+            return(f'Você está na {self.players[num].getPos()[1]}, na area {self.players[num].getPos()[0]}. {roomEnemys}')
+        
+    def enemyTurn(self):
+        #index = 0
+        rooms = []
+        #indexArea = utils.getIndexArea(self.area, self.players[0].pos[0])
+        #indexRoom = utils.getIndexRoom(self.area[indexArea].room, self.players[0].pos[1])
+
+        for player in self.players:
+            attack = True
+            indexArea = utils.getIndexArea(self.area, player.getPos()[0])
+            indexRoom = utils.getIndexRoom(self.area[indexArea].room, player.getPos()[1])
+
+            enemy = self.area[indexArea].room[indexRoom].getEnemy()
+
+            for place in rooms:
+                if place[0] == indexArea and place[1] == indexRoom:
+                    attack = False
+
+            if len(enemy) > 0 and attack == True:
+                rooms.append([indexArea, indexRoom])
+                player.getCharac().setLife(enemy[0].getStatus()[2])
+
                 

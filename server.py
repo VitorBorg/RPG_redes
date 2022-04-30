@@ -2,6 +2,7 @@ from ast import While
 import threading
 import socket
 import time
+from xml.dom.pulldom import CHARACTERS
 from game.system.player import player
 from game.actors.character import character
 from game.system.rpg import rpg
@@ -12,6 +13,8 @@ clients = []
 rpgGame = rpg('O castelo')
 
 DATASIZE = 2048
+ADDRESS = 'localhost'
+#'localhost'
 
 def messagesTreatment(client):
     while True:
@@ -54,10 +57,9 @@ def network():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
-        server.bind(('localhost', 7777))
+        server.bind((ADDRESS, 7777))
         server.listen()
         print('\nServidor iniciado. Aguardando jogadores.\n')
-        sentence = 'testando a porra do split'
     except:
         return print('\nNão foi possível iniciar o servidor!\n')
 
@@ -81,7 +83,7 @@ def game():
     #mensagem inicial
     sendMessageToAllClients(messageWrite('TEXT', "", "", rpgGame.play()))
     #mensagem de criacao de personagens
-    sendMessageToAllClients(messageWrite('INFO', '', 'characters', ''))
+    #sendMessageToAllClients(messageWrite('CHARAC', '', 'characters', ''))
 
     #loop da criacao de personagem
     while len(rpgGame.getPlayers()) < 2:
@@ -104,11 +106,15 @@ def game():
 
         if turn == 0 or turn == 1:
             sendMessageToAllClients(messageWrite('TEXT', "", "", 'Rodada de algum jogador'))
-            sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
+            #sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
             while True:
                 sendMessageToClient(messageWrite('INFO', '', 'default', rpgGame.dataPrint('default', turn)), rpgGame.getPlayers()[turn].client)
         else:
             sendMessageToAllClients(messageWrite('TEXT', "", "", 'Rodada de inimigos'))
+            rpgGame.enemyTurn()
+
+            charac = [rpgGame.getPlayers()[0].getCharac(), rpgGame.getPlayers()[1].getCharac()]
+            sendMessageToAllClients(messageWrite('TEXT', "", "", f'Os inimigos jogaram...\nO {charac[0].getStatus[0]} está com {charac[0].getStatus[4]} de vida!\nO {charac[1].getStatus[0]} está com {charac[1].getStatus[4]} de vida!'))
 
         time.sleep(20)
         print('\nJOGO RODANDO')
@@ -136,15 +142,53 @@ def messageUPDT(msg, client):
     newPlayer = player(character(name, classe, action, space, life, strength, intelligence), client)
     rpgGame.addPlayer(newPlayer)
     #writingProtocol(codes, menuMsg, client)
+
+def messageMOVE(msg, client):
+    area = msg[0:100]
+    room = msg[100:200]
+
+    player = rpgGame.findPlayer(client)
+    player.setPos([area, room])
+    player.setAction(5)
+
+def messageBATT(msg, client):
+    action = msg[0:1]
+
+    #atacar, verifica a sala se tem inimigos, pega o [0] e manda ataque baseado no dano com dados
+    #defender, aumenta um pouco a vida baseado na inteligencia com dados
+    #curar, cura todos os personagens baseado na inteligencia com dados
+
+def messageBPAC(msg):
+    #O personagem [nome] da classe [classe] está na sala [sala], na area [area], com [vida] de vida.
+    sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
+
+def messagePART(msg):
+
+    #O personagem [nome] da classe [classe] está na sala [sala], na area [area], com [vida] de vida.
+    sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
+
+def messageNEXT(msg):
+    rpgGame.nextTurn()
         
 #SEND PROTOCOL MESSAGES
-def messageWrite(code, flags, menuOption, msg):
+def messageWrite(code, player, menuOption, msg):
     menu = rpgGame.menuPrint(menuOption)
 
     if code == 'INFO':
         #CODIGO DA MENSAGEM, MENU DO JOGO, CORPO DO TEXTO
-        return (code + ('{:<100}'.format(menu)) + ('{:<500}'.format(msg)))
+        count = 0
+        menuRooms = ''
+        indexArea = utils.getIndexArea(rpgGame.getAreas(), player.getPos()[0])
+
+        for room in rpgGame.getAreas()[indexArea]:
+            if room.getInfo()[0] != player.getPos()[1]:
+                menuRooms = f'{menuRooms}\n{count}. {room.getInfo()[0]}'
+                count += 1
+#       return (f'{code}{"{:<100}".format(menu)}{"{:<50}".format('')}{"{:<300}".format(menuRooms)}{"{:<20}".format(player.getCharac().getStatus()[1])}{"{:<100}".format('')}')
+        return (f'{code}{"{:<100}".format(menu)}{"{:<50}".format("")}{"{:<300}".format(menuRooms)}{"{:<20}".format(player.getCharac().getStatus()[1])}{"{:<100}".format("")}{"{:<260}".format(msg)}')
     elif code == 'TEXT':
-        return (code + msg)
+        return (f'{code}{msg}')
+    elif code == 'CHARAC':
+         return (f'{"INFO"}{"{:<100}".format(menu)}{"{:<50}".format("")}{"{:<300}".format("")}{"{:<20}".format("")}{"{:<100}".format("")}')
 
 network()

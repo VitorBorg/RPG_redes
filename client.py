@@ -5,18 +5,19 @@ import time
 from game.utils.utils import utils
 
 DATASIZE = 2048
+ADDRESS = 'localhost'
 
 def network():
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
-        client.connect(('localhost', 7777))
+        client.connect((ADDRESS, 7777))
     except:
-        return print('\nNão foi possível se conectar ao servidor!\n')
+        return print(f'\nNão foi possível se conectar ao servidor!\n')
 
     #username = input('Usuário> ')
-    print('\nConectado')
+    print(f'\nConectado')
 
     thread1 = threading.Thread(target=receiveMessages, args=[client])
     #thread2 = threading.Thread(target=sendMessages, args=['',client])
@@ -32,8 +33,8 @@ def receiveMessages(client):
             #print(msg)
             readingProtocol(msg, client)
         except:
-            print('\nNão foi possível permanecer conectado no servidor!\n')
-            print('Pressione <Enter> Para continuar...')
+            print(f'\nNão foi possível permanecer conectado no servidor!\n')
+            print(f'Pressione <Enter> Para continuar...')
             client.close()
             break
             
@@ -48,7 +49,7 @@ def sendMessages(msg, client):
 #READING PROTOCOL MESSAGES
 def readingProtocol(msg, client):
     typeMsg = msg[0:4]
-    #print(f'\n ---------------\n DATA RECEBIDA{typeMsg} \n ---------------\n')
+    print(f'\n ---------------\n DATA RECEBIDA{typeMsg} \n ---------------\n')
 
     if typeMsg == 'INFO':
         messageINFO(msg[4:len(msg)], client)
@@ -62,42 +63,44 @@ def readingProtocol(msg, client):
 #FLAGS: BOARD, AREA, ROOM, STATS, ITEMS, OTHERS PLAYERS...
 def messageINFO(msg, client):
     menuMsg = msg[0:100]
-    #print(f"\n MENUMSG: {menuMsg}")
-    data = msg[100: len(msg)]
-    #print(f"\n data = {data}")
+    areamsg = msg[100:150]
+    roommsg = msg[150:450]
+    classmsg = msg[450:470]
+    itemsmsg = msg[470:750]
+    datamsg = msg[750:1010]
     codes = utils.parser(menuMsg)
-    #print(f"\n codes = {codes}")
 
-    print(f'\n {data.strip()} \n')
-    writingProtocol(codes, menuMsg, client)
+    print(f'\n {datamsg.strip()} \n')
+    writingProtocol(codes, menuMsg, classmsg, areamsg, roommsg, itemsmsg, client)
 
 def messageTEXT(msg):
-    print(msg)
+    print(f'\n{msg}')
 
 
 #WRITING PROTOCOL MESSAGES
-def writingProtocol(codes, menuMsg, client):
+def writingProtocol(codes, menuMsg, classe, areas, rooms, itemsmsg, client):
     while True:
-        print(menuMsg)
+        print(f'MENUPRINT: {menuMsg}')
         decision = input('Selecione sua próxima ação: ')
 
         if decision not in codes:
-            print('\n Ação desconhecida. Por favor, faça uma ação válida!')
+            print(f'\n Ação desconhecida. Por favor, faça uma ação válida!')
         else:
             if decision == '0':
                 messageUPDT(client)
                 break
             elif decision == '1':
-                messageThreeFields(client, 'MOVE', )
+                messageMOVE(client, 'MOVE', areas, rooms)
                 break
             elif decision == '2':
+                messageBATT(client, 'BATT', classe)
                 pass
             elif decision == '3':
-                pass
+                messageBPAC(client, 'BPAC') #procurar itens, usar itens [lista de itens na mochila]
             elif decision == '4':
-                pass
+                messageTwoFields(client, 'PART')
             elif decision == '5':
-                pass
+                messageTwoFields(client, 'NEXT')
 
 #MESSAGE TO UPDATE CLIENT DATA - UPDATE
 def messageUPDT(client):
@@ -107,7 +110,7 @@ def messageUPDT(client):
     classe = ''
     
     while True:
-        print('\nIniciando a criação de personagem...')
+        print(f'\nIniciando a criação de personagem...')
 
         print('\n.')
         time.sleep(1)
@@ -141,14 +144,74 @@ def messageUPDT(client):
 
     sendMessages(f'UPDT{name}{classe}{atribute[0]}{atribute[1]}{atribute[2]}{atribute[3]}{atribute[4]}', client)
 
-#MESSAGE TO ACTION - SET
-#FLAGS:INITIAL SETUP, MOVEMENT, FIGHT, ITEMS FROM BACKPACK
+#MESSAGE BACKPACK THINGS
+def messageBPAC(client, code):
+    print('Você tem certeza que está de mochila? Eu acho que não...')
+    sendMessages(f'{BPAC}', client)
+
 
 #MESSAGE TO MOVE THE PLAYER - MOVE
+def messageMOVE(client, areas, rooms, code):
+    area = ''
+    room = ''
+
+    while True:
+        print('\nVocê irá para onde?')
+
+        area = input('\n1.Navegar pelas salas\n2.Mudar de área (Você não poderá retornar)')
+
+        if area != '1' or area != '2':
+            print('\n Ação inválida!')
+        else: 
+            break
+
+    if area == '1':
+        count = 0
+        for room in rooms:
+            print(f'{count}. {room[count]}')
+
+        while True:
+            room = input('\nPara qual salá você vai?')
+
+
+    sendMessages(f'{code}{areas[area]}{rooms[room]}', client)
+
 #MESSAGE TO BATTLE MODE - BATT
-#MESSAGE TO GET THE DATA OR USE SOME ITEM FROM BACKPACK
-def messageThreeFields(client, code, flag, msg):
-     sendMessages(f'{code}{flag}{msg}', client)
+def messageBATT(client, code, classe):
+    action = ''
+
+    #which spell
+    msg = ''
+
+    while True:
+        print('\nQue tipo de ação de combate você fará?')
+
+        if classe == '1': #mago
+            action = input('\n1.Ataque')
+            
+            if action != '1':
+                print('\n Ação inválida!')
+            else:
+                break
+
+        elif classe == '2': #tanque
+            action = input('\n1.Ataque\n2.defesa')
+            
+            if action != '2' or action != '1':
+                print('\n Ação inválida!')
+            else:
+                break
+        
+        elif classe == '3': #suporte
+            action = input('\n1.Ataque\n3.cura')
+            
+            if action != '1' or action != '3':
+                print('\n Ação inválida!')
+            else:
+                break
+
+
+    sendMessages(f'{code}{action}{msg}', client)
 
 #MESSAGE TO RECEIVE INFO ABOUT THE OTHER PLAYER - PART
 #MESSAGE TO FINISH THE ROUND - NEXT
