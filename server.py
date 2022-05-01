@@ -23,11 +23,11 @@ def messagesTreatment(client):
             msg = client.recv(DATASIZE)
             readingProtocol(msg.decode('utf-8'), client)
 
-            print('\n!!SERVER RECEIVE MESSAGE !!')
+            #print('\n!!SERVER RECEIVE MESSAGE !!')
 
             if len(rpgGame.getPlayers()) >= 2:
                 event.set()
-                print('\n!!SERVER PASS GAME WHILE !!')
+                #print('\n!!SERVER PASS GAME WHILE !!')
         except:
             deleteClient(client)
             break
@@ -35,7 +35,7 @@ def messagesTreatment(client):
 
 def sendMessageToAllClients(msg):
     for clientItem in clients:
-        time.sleep(.2)
+        time.sleep(.3)
         try:
             clientItem.send(msg.encode('utf-8'))
         except:
@@ -155,11 +155,11 @@ def game():
             rpgGame.nextTurn()
 
         #print('\nCOMANDO RECEBIDO\n')
-
-        for c in clients:
-            deleteClient(c)
-    #sendMessageToAllClients(messageWrite('TEXT', "", "", textMessage))
-    #print('\nJogo finalizado')
+    
+    sendMessageToAllClients(messageWrite('TEXT', "", "", 'Conexão finalizada!'))
+    print('Finalizada')
+    for c in clients:
+        deleteClient(c)
 
 #READING PROTOCOL MESSAGES
 def readingProtocol(msg, client):
@@ -227,6 +227,7 @@ def messageBATT(msg, client):
 
         if len(enemy) > 0:
             enemy[0].setLife(player.getCharac().getStatus()[5])
+            time.sleep(.2)
             sendMessageToAllClients(messageWrite('TEXT', "", "", f'{player.getCharac().getStatus()[0]} atacou {enemy[0].getStatus()[0]} e deixou ele com {enemy[0].getStatus()[1]} pontos de vida!'))
 
             if enemy[0].getStatus()[1] <= 0:

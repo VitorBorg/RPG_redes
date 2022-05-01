@@ -39,11 +39,11 @@ def receiveMessages(client):
             break
             
 def sendMessages(msg, client):
-    print('SENDING...')
+    #print('SENDING...')
     while True:
         try:
             client.send(msg.encode('utf-8'))
-            print('For real...')
+            #print('For real...')
             break
         except:
             return

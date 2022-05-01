@@ -140,7 +140,11 @@ class rpg:
             roomData = self.area[indexArea].room[indexRoom]
             roomEnemys = 'Onde, aparentemente, não há inimigos.'
             if len(roomData.getEnemy()) > 0:
-                roomEnemys = f'Onde tem {len(roomData.getEnemy())} {roomData.getEnemy()[0].getName()}.'
+                if len(roomData.getEnemy()) > 1:
+                    roomEnemys = f'Onde tem {len(roomData.getEnemy())} {roomData.getEnemy()[0].getName()}. O mais próximo, com {roomData.getEnemy()[0].getLife()} de vida restante.'
+                else:
+                    roomEnemys = f'Onde tem {len(roomData.getEnemy())} {roomData.getEnemy()[0].getName()}, com {roomData.getEnemy()[0].getLife()} de vida restante.'
+            
             currentPlayer = self.players[self.boardTurn].getCharac().getStatus()
             return(f'Você está na {self.players[num].getPos()[1]}, {roomData.getInfo()[1]}, na area {self.players[num].getPos()[0]}. {roomEnemys}\n\n{currentPlayer[0]}, o {currentPlayer[1]}, tem {self.players[self.boardTurn].getLife()} de vida restante.\nVocê ainda tem {self.players[self.boardTurn].getAction()} de {currentPlayer[2]} pontos de ação na rodada!')
         
