@@ -60,3 +60,6 @@ SERVIDOR
 
 Envia INFO
 [CODE][menu][areas][rooms][class][items][data]
+
+Envia TEXT
+[CODE][data]

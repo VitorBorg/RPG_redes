@@ -8,19 +8,28 @@ class player():
         self.items = []
 
     def setAction(self, value):
-        self.action -= value
+        self.action = (self.action - value)
     
     def getAction(self):
         return(self.action)
     
     def resetAction(self):
-        self.action = self.charac.getStatus()[4]
+        self.action = self.charac.getStatus()[2]
+    
+    def getActionValue(self):
+        return self.charac.getStatus()[2]
 
     def setLife(self, value):
-        self.life = value
+        self.life = (self.life - value)
     
     def getLife(self):
         return (self.life)
+        
+    def setCure(self, value):
+        if value + self.life > self.charac.getStatus()[4]:
+            self.life = self.charac.getStatus()[4]
+        else:
+            self.life = (self.life + value)
 
     def setPos(self, newPos):
         self.pos[0] = newPos[0]

@@ -39,9 +39,11 @@ def receiveMessages(client):
             break
             
 def sendMessages(msg, client):
+    print('SENDING...')
     while True:
         try:
             client.send(msg.encode('utf-8'))
+            print('For real...')
             break
         except:
             return
@@ -99,13 +101,16 @@ def writingProtocol(codes, menuMsg, classe, areas, rooms, itemsmsg, client):
                 break
             elif decision == '2':
                 messageBATT(client, 'BATT', classe)
-                pass
+                break
             elif decision == '3':
                 messageBPAC(client, 'BPAC') #procurar itens, usar itens [lista de itens na mochila]
+                break
             elif decision == '4':
                 messageTwoFields(client, 'PART')
+                break
             elif decision == '5':
                 messageTwoFields(client, 'NEXT')
+                break
 
 #MESSAGE TO UPDATE CLIENT DATA - UPDATE
 def messageUPDT(client):
@@ -182,7 +187,8 @@ def messageMOVE(client, code, areas, rooms):
     elif area == '1':
         count = 0
         for r in listareas:
-            print(f'{count}. {r}')
+            if count > 0:
+                print(f'{count}. {r}')
             count += 1
         
         #precisa fazer a verificacao do valor
@@ -203,40 +209,42 @@ def messageBATT(client, code, classe):
     msg = ''
 
     while True:
-        print('\nQue tipo de ação de combate você fará?')
+        #print(f'\nSua classe {classe}')
+        #input('\n')
 
-        if classe == '1': #mago
-            action = input('\n1.Ataque [4]')
+        if classe == 'mago': #mago
+            print('\n1.Ataque [4]\n')
+            action = input('Que tipo de ação de combate você fará? ')
             
             if action != '1':
                 print('\n Ação inválida!')
             else:
                 break
 
-        elif classe == '2': #tanque
-            action = input('\n1.Ataque[4] \n2.defesa [todos os pontos]')
-            
-            if action != '2' or action != '1':
+        elif classe == 'tanque': #tanque
+            print('\n1.Ataque[4] \n2.defesa [todos os pontos]')
+            action = input('Que tipo de ação de combate você fará? ')
+
+            if action != '2' and action != '1':
                 print('\n Ação inválida!')
             else:
                 break
         
-        elif classe == '3': #suporte
-            action = input('\n1.Ataque [4]\n3.curar[3 pontos]')
-            
-            if action != '1' or action != '3':
+        elif classe == 'suporte': #suporte
+            print('\n1.Ataque [4]\n3.curar[3 pontos]')
+            action = input('Que tipo de ação de combate você fará? ')
+
+            if action != '1' and action != '3':
                 print('\n Ação inválida!')
             else:
                 break
-
-
-    sendMessages(f'{code}{action}{msg}', client)
+    #sendMessages(f'{code}{action}{msg}', client)
+    sendMessages(f'{code}{"{:<2}".format(action)}{"{:<100}".format(msg)}', client)
 
 #MESSAGE TO RECEIVE INFO ABOUT THE OTHER PLAYER - PART
 #MESSAGE TO FINISH THE ROUND - NEXT
 def messageTwoFields(client, code):
-    flagGetData = '1'
-    sendMessages(f'{code}{flagGetData}', client)
+    sendMessages(f'{code}', client)
 
 
 network()

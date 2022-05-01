@@ -73,3 +73,14 @@ class utils():
             return ('tanque')
         elif msg == '3':
             return ('suporte')
+
+    def completeDescription(player):
+        #O personagem [nome] da classe [classe] está na sala [sala], na area [area], com [vida] de vida. 
+        #Ele possui [strength] de força, [intelligence] de inteligência, e a mochila com espaço para [space] itens.
+        msg = ''
+        atrib = player.getCharac().getStatus()
+        msg = msg + (f'O personagem {atrib[0]} da classe {atrib[1]} está na sala {player.getPos()[1]}, na area {player.getPos()[0]}, com {player.getLife()} de vida.\n')
+        msg = msg + (f'Ele possui {atrib[5]} de força, {atrib[6]} de inteligência, a mochila com espaço para {atrib[3]} itens, e o total de {atrib[2]} pontos de ação!\n\n')
+
+        return (msg)
+

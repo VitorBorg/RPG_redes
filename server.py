@@ -11,6 +11,7 @@ from game.utils.utils import utils
 
 clients = []
 rpgGame = rpg('O castelo')
+event = threading.Event()
 
 DATASIZE = 2048
 ADDRESS = 'localhost'
@@ -21,6 +22,12 @@ def messagesTreatment(client):
         try:
             msg = client.recv(DATASIZE)
             readingProtocol(msg.decode('utf-8'), client)
+
+            print('\n!!SERVER RECEIVE MESSAGE !!')
+
+            if len(rpgGame.getPlayers()) >= 2:
+                event.set()
+                print('\n!!SERVER PASS GAME WHILE !!')
         except:
             deleteClient(client)
             break
@@ -92,35 +99,67 @@ def game():
         print(f'Aguardando jogadores... {len(rpgGame.getPlayers())} de 2 players prontos.')
 
     
-    #inicio real do jogo
+    #print dos atributos
     print('Jogadores cadastrados...')
     time.sleep(2)
+    msg = ''
+    for p in rpgGame.getPlayers():
+        msg = msg + utils.completeDescription(p)
+    
+    sendMessageToAllClients(messageWrite('TEXT', "", "", msg))
+    time.sleep(4)
 
-    #storytext = rpgGame.story()
+    #set
+    event.set()
 
-    #for line in storytext:
+    #historia de inicio
+    #for line in rpgGame.story():
     #    sendMessageToAllClients(messageWrite('TEXT', "", "", line[0]))
     #    time.sleep(line[1])
 
-    while True:
+    #inicio real do jogo
+    while event.is_set():
+        print('\nLOOP')
         turn = rpgGame.getTurn()
 
-        if turn == 0 or turn == 1:
+        if rpgGame.getBoss().getLife() <= 0:
+            sendMessageToAllClients(messageWrite('TEXT', "", "", '\n Parabéns! Vocês venceram o Boss! O jogo acabou!'))
+            break
+        elif rpgGame.getAllAlive() == False:
+            sendMessageToAllClients(messageWrite('TEXT', "", "", '\n Infelizmente vocês não conseguiram! Todos os jogadores estão com a vida zerada! O jogo acabou!'))
+            break
+        elif turn == 0 or turn == 1:
             sendMessageToAllClients(messageWrite('TEXT', "", "", 'Rodada de algum jogador'))
-            #sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
-            #while True:
-            #    sendMessageToAllClients(messageWrite('TEXT', "", "", 'WHILE DO PLAYER'))
-            #    time.sleep(1)
-            #    sendMessageToClient(messageWrite('INFO', rpgGame.getPlayers()[turn], 'default', rpgGame.dataPrint('default', turn)), rpgGame.getPlayers()[turn].client)
+
+            if rpgGame.getPlayers()[turn].getLife() <= 0:
+                sendMessageToAllClients(messageWrite('TEXT', "", "", 'O jogador dessa rodada não tem mais vida!'))
+                rpgGame.nextTurn()
+            else:
+               sendMessageToClient(messageWrite('INFO', rpgGame.getPlayers()[turn], 'default', rpgGame.dataPrint('default', turn)), rpgGame.getPlayers()[turn].client)
         else:
             sendMessageToAllClients(messageWrite('TEXT', "", "", 'Rodada de inimigos'))
+
             rpgGame.enemyTurn()
 
-            charac = [rpgGame.getPlayers()[0].getCharac(), rpgGame.getPlayers()[1].getCharac()]
-            sendMessageToAllClients(messageWrite('TEXT', "", "", f'Os inimigos jogaram...\nO {charac[0].getStatus[0]} está com {charac[0].getStatus[4]} de vida!\nO {charac[1].getStatus[0]} está com {charac[1].getStatus[4]} de vida!'))
+            charac = [rpgGame.getPlayers()[0], rpgGame.getPlayers()[1]]
+            textMessage = (f'Os inimigos jogaram...\nO {charac[0].getCharac().getStatus()[0]} está com {charac[0].getLife()} de vida!\nO {charac[1].getCharac().getStatus()[0]} está com {charac[1].getLife()} de vida!')
+            sendMessageToAllClients(messageWrite('TEXT', "", "", textMessage))
+        
+        print('\nENVIOS DA RODADA FEITOS\n')
+        print(f'\nturn: {rpgGame.getTurn()}')
 
-        time.sleep(20)
-        print('\nJOGO RODANDO')
+        if rpgGame.getTurn() != 2:
+            event.clear()
+            event.wait()
+        else:
+            rpgGame.nextTurn()
+
+        #print('\nCOMANDO RECEBIDO\n')
+
+        for c in clients:
+            deleteClient(c)
+    #sendMessageToAllClients(messageWrite('TEXT', "", "", textMessage))
+    #print('\nJogo finalizado')
 
 #READING PROTOCOL MESSAGES
 def readingProtocol(msg, client):
@@ -152,35 +191,92 @@ def messageUPDT(msg, client):
 
     newPlayer = player(character(name, classe, action, space, life, strength, intelligence), client)
     rpgGame.addPlayer(newPlayer)
+    event.set()
     #writingProtocol(codes, menuMsg, client)
 
 def messageMOVE(msg, client):
     area = msg[0:100].strip()
     room = msg[100:200].strip()
 
-    player = rpgGame.findPlayer(client)
-    rpgGame.getPlayers()[player].setPos([area, room])
-    rpgGame.getPlayers()[player].setAction(5) 
+    #player = rpgGame.findPlayer(client)
+    turn = rpgGame.getTurn()
+    player = rpgGame.getPlayers()[turn]
+
+    if player.getPos()[0] != area:
+        print('CHANGE AREA')
+        index = utils.getIndexArea(rpgGame.getAreas(), area)
+        player.setPos([area, rpgGame.getAreas()[index].getRoom()[0].getInfo()[0]])
+        player.setAction(player.getActionValue())  
+    else:
+        print('CHANGE ONLY ROOM')
+        player.setPos([area, room])
+        player.setAction(4)
+    event.set()
 
 def messageBATT(msg, client):
-    action = msg[0:1]
+    action = msg[0:1].strip()
 
+    player = rpgGame.getPlayers()[rpgGame.getTurn()]
+    
+    #ataque
+    if action == '1':
+        indexArea = utils.getIndexArea(rpgGame.getAreas(), player.getPos()[0])
+        indexRoom = utils.getIndexRoom(rpgGame.getAreas()[indexArea].room, player.getPos()[1])
+        
+        enemy = rpgGame.getAreas()[indexArea].room[indexRoom].getEnemy()
+
+        if len(enemy) > 0:
+            enemy[0].setLife(player.getCharac().getStatus()[5])
+            sendMessageToAllClients(messageWrite('TEXT', "", "", f'{player.getCharac().getStatus()[0]} atacou {enemy[0].getStatus()[0]} e deixou ele com {enemy[0].getStatus()[1]} pontos de vida!'))
+
+            if enemy[0].getStatus()[1] <= 0:
+                rpgGame.getAreas()[indexArea].room[indexRoom].getEnemy().remove(enemy[0])
+        else:
+            sendMessageToAllClients(messageWrite('TEXT', "", "", f'{player.getCharac().getStatus()[0]} tentou atacar alguma coisa... E não acertou nada! Parece que não há inimigos lá.'))
+    #defender
+    elif action == '2':
+        cure = player.getCharac().getStatus()[6]
+        player.setCure(cure)
+
+        sendMessageToAllClients(messageWrite('TEXT', "", "", f'{player.getCharac().getStatus()[0]} se defendeu e recuperou {cure} pontos de vida!'))
+    #curar
+    elif action == '3':
+        cure = player.getCharac().getStatus()[6]
+
+        for pl in rpgGame.getPlayers():
+            if pl != player:
+                pl.setCure(cure)
+
+        sendMessageToAllClients(messageWrite('TEXT', "", "", f'{player.getCharac().getStatus()[0]} curou todos (exceto ele mesmo) em {cure} pontos de vida!'))    
+    
     #atacar, verifica a sala se tem inimigos, pega o [0] e manda ataque baseado no dano com dados
     #defender, aumenta um pouco a vida baseado na inteligencia com dados
     #curar, cura todos os personagens baseado na inteligencia com dados
 
 def messageBPAC(msg, client):
     #O personagem [nome] da classe [classe] está na sala [sala], na area [area], com [vida] de vida.
-    sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
+    sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[rpgGame.getTurn()].client)
 
 def messagePART(client):
+    #O personagem [nome] da classe [classe] está na sala [sala], na area [area], com [vida] de vida. 
+    #Ele possui [strength] de força, [intelligence] de inteligência, e a mochila com espaço para [space] itens.
 
-    #O personagem [nome] da classe [classe] está na sala [sala], na area [area], com [vida] de vida.
-    sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
+    msg = ''
+    for p in rpgGame.getPlayers():
+        msg = msg + utils.completeDescription(p)
+    
+     
+    sendMessageToClient(messageWrite('TEXT', "", "", msg), client)
 
 def messageNEXT():
     print("\nRECEBIDO")
+    print(f'\n{rpgGame.getTurn()}')
+    #for action in rpg.getPlayers():
+    #    action.resetAction()
     rpgGame.nextTurn()
+    print(f'\nCHANGE {rpgGame.getTurn()}')
+    time.sleep(1)
+    event.set()
         
 #SEND PROTOCOL MESSAGES
 def messageWrite(code, player, menuOption, msg):
@@ -203,10 +299,6 @@ def messageWrite(code, player, menuOption, msg):
         for a in rpgGame.getAreas():
             if player.getPos()[0] != a.getInfo()[0]:
                 menuAreas = f'{menuAreas}\n{a.getInfo()[0]}'
-
-        #print("@@@@@@@@@ EXIBINDO MSG")
-        #print(f'{msg}')
-        #print("@@@@@@@@@ EXIBINDO MSG")
 
         return (f'{code}{"{:<100}".format(menu)}{"{:<50}".format(menuAreas)}{"{:<300}".format(menuRooms)}{"{:<20}".format(player.getCharac().getStatus()[1])}{"{:<280}".format("")}{"{:<260}".format(msg)}')
     elif code == 'TEXT':

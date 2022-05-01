@@ -18,3 +18,6 @@ class enemy():
 
     def setLife(self, atrib):
         self.life = (self.life - atrib)
+
+    def getLife(self):
+        return self.life
