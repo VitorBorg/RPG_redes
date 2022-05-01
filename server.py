@@ -28,6 +28,7 @@ def messagesTreatment(client):
 
 def sendMessageToAllClients(msg):
     for clientItem in clients:
+        time.sleep(.2)
         try:
             clientItem.send(msg.encode('utf-8'))
         except:
@@ -83,7 +84,7 @@ def game():
     #mensagem inicial
     sendMessageToAllClients(messageWrite('TEXT', "", "", rpgGame.play()))
     #mensagem de criacao de personagens
-    #sendMessageToAllClients(messageWrite('CHARAC', '', 'characters', ''))
+    sendMessageToAllClients(messageWrite('CHARAC', '', 'characters', ''))
 
     #loop da criacao de personagem
     while len(rpgGame.getPlayers()) < 2:
@@ -107,8 +108,10 @@ def game():
         if turn == 0 or turn == 1:
             sendMessageToAllClients(messageWrite('TEXT', "", "", 'Rodada de algum jogador'))
             #sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
-            while True:
-                sendMessageToClient(messageWrite('INFO', '', 'default', rpgGame.dataPrint('default', turn)), rpgGame.getPlayers()[turn].client)
+            #while True:
+            #    sendMessageToAllClients(messageWrite('TEXT', "", "", 'WHILE DO PLAYER'))
+            #    time.sleep(1)
+            #    sendMessageToClient(messageWrite('INFO', rpgGame.getPlayers()[turn], 'default', rpgGame.dataPrint('default', turn)), rpgGame.getPlayers()[turn].client)
         else:
             sendMessageToAllClients(messageWrite('TEXT', "", "", 'Rodada de inimigos'))
             rpgGame.enemyTurn()
@@ -125,31 +128,39 @@ def readingProtocol(msg, client):
 
     if typeMsg == 'UPDT':
         messageUPDT(msg[4:len(msg)], client)
-    elif typeMsg == 'TEXT':
-        messageTEXT(msg[4:len(msg)])
-    elif typeMsg == 'EXIT':
-        pass
+    elif typeMsg == 'MOVE':
+        messageMOVE(msg[4:len(msg)], client)
+    elif typeMsg == 'BATT':
+        messageBATT(msg[4:len(msg)], client)
+    elif typeMsg == 'BPAC':
+        messageBPAC(msg[4:len(msg)], client)
+    elif typeMsg == 'PART':
+        messagePART(client)
+    elif typeMsg == 'NEXT':
+        messageNEXT()
 
 def messageUPDT(msg, client):
-    name = msg[0:20]
-    classe = msg[20:40]
-    action = msg[40:42]
-    space = msg[42:44]
-    life = msg[44:46]
-    strength = msg[46:48]
-    intelligence = msg[48:50]
+    name = msg[0:20].strip()
+    classe = msg[20:40].strip()
+    action = int(msg[40:42].strip())
+    space = int(msg[42:44].strip())
+    life = int(msg[44:46].strip())
+    strength = int(msg[46:48].strip())
+    intelligence = int(msg[48:50].strip())
+
+    classe = utils.nameClass(classe)
 
     newPlayer = player(character(name, classe, action, space, life, strength, intelligence), client)
     rpgGame.addPlayer(newPlayer)
     #writingProtocol(codes, menuMsg, client)
 
 def messageMOVE(msg, client):
-    area = msg[0:100]
-    room = msg[100:200]
+    area = msg[0:100].strip()
+    room = msg[100:200].strip()
 
     player = rpgGame.findPlayer(client)
-    player.setPos([area, room])
-    player.setAction(5)
+    rpgGame.getPlayers()[player].setPos([area, room])
+    rpgGame.getPlayers()[player].setAction(5) 
 
 def messageBATT(msg, client):
     action = msg[0:1]
@@ -158,16 +169,17 @@ def messageBATT(msg, client):
     #defender, aumenta um pouco a vida baseado na inteligencia com dados
     #curar, cura todos os personagens baseado na inteligencia com dados
 
-def messageBPAC(msg):
+def messageBPAC(msg, client):
     #O personagem [nome] da classe [classe] está na sala [sala], na area [area], com [vida] de vida.
     sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
 
-def messagePART(msg):
+def messagePART(client):
 
     #O personagem [nome] da classe [classe] está na sala [sala], na area [area], com [vida] de vida.
     sendMessageToClient(messageWrite('TEXT', "", "", 'Sua rodada'), rpgGame.getPlayers()[turn].client)
 
-def messageNEXT(msg):
+def messageNEXT():
+    print("\nRECEBIDO")
     rpgGame.nextTurn()
         
 #SEND PROTOCOL MESSAGES
@@ -176,16 +188,27 @@ def messageWrite(code, player, menuOption, msg):
 
     if code == 'INFO':
         #CODIGO DA MENSAGEM, MENU DO JOGO, CORPO DO TEXTO
-        count = 0
+        #count = 0
         menuRooms = ''
         indexArea = utils.getIndexArea(rpgGame.getAreas(), player.getPos()[0])
+        menuAreas = ''
 
-        for room in rpgGame.getAreas()[indexArea]:
+        for room in rpgGame.getAreas()[indexArea].getRoom():
             if room.getInfo()[0] != player.getPos()[1]:
-                menuRooms = f'{menuRooms}\n{count}. {room.getInfo()[0]}'
-                count += 1
-#       return (f'{code}{"{:<100}".format(menu)}{"{:<50}".format('')}{"{:<300}".format(menuRooms)}{"{:<20}".format(player.getCharac().getStatus()[1])}{"{:<100}".format('')}')
-        return (f'{code}{"{:<100}".format(menu)}{"{:<50}".format("")}{"{:<300}".format(menuRooms)}{"{:<20}".format(player.getCharac().getStatus()[1])}{"{:<100}".format("")}{"{:<260}".format(msg)}')
+                menuRooms = f'{menuRooms}\n{room.getInfo()[0]}'
+                #count += 1
+
+        #adicionando as areas
+        menuAreas = f'{menuAreas}\n{player.getPos()[0]}'
+        for a in rpgGame.getAreas():
+            if player.getPos()[0] != a.getInfo()[0]:
+                menuAreas = f'{menuAreas}\n{a.getInfo()[0]}'
+
+        #print("@@@@@@@@@ EXIBINDO MSG")
+        #print(f'{msg}')
+        #print("@@@@@@@@@ EXIBINDO MSG")
+
+        return (f'{code}{"{:<100}".format(menu)}{"{:<50}".format(menuAreas)}{"{:<300}".format(menuRooms)}{"{:<20}".format(player.getCharac().getStatus()[1])}{"{:<280}".format("")}{"{:<260}".format(msg)}')
     elif code == 'TEXT':
         return (f'{code}{msg}')
     elif code == 'CHARAC':

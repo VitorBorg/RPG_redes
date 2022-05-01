@@ -66,3 +66,10 @@ class utils():
                 return index
             index += 1
 
+    def nameClass(msg):
+        if msg == '1':
+            return ('mago')
+        elif msg == '2':
+            return ('tanque')
+        elif msg == '3':
+            return ('suporte')

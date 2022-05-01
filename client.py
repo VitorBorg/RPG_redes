@@ -30,7 +30,7 @@ def receiveMessages(client):
     while True:
         try:
             msg = client.recv(DATASIZE).decode('utf-8')
-            #print(msg)
+            #print(f'RECEIVE DATA: \n{msg}')
             readingProtocol(msg, client)
         except:
             print(f'\nNão foi possível permanecer conectado no servidor!\n')
@@ -49,7 +49,7 @@ def sendMessages(msg, client):
 #READING PROTOCOL MESSAGES
 def readingProtocol(msg, client):
     typeMsg = msg[0:4]
-    print(f'\n ---------------\n DATA RECEBIDA{typeMsg} \n ---------------\n')
+    #print(f'\n ---------------\n DATA RECEBIDA{typeMsg} \n ---------------\n')
 
     if typeMsg == 'INFO':
         messageINFO(msg[4:len(msg)], client)
@@ -70,8 +70,12 @@ def messageINFO(msg, client):
     datamsg = msg[750:1010]
     codes = utils.parser(menuMsg)
 
-    print(f'\n {datamsg.strip()} \n')
-    writingProtocol(codes, menuMsg, classmsg, areamsg, roommsg, itemsmsg, client)
+    #print(f'\n@@@@@@@@@@@@@@@@@@@@\n{classmsg}\n{datamsg}\n@@@@@@@@@@@@@@@@@@@@')
+
+    print(f'\n{datamsg.strip()} \n')
+
+    #print(f'\n##################\n')
+    writingProtocol(codes, menuMsg.strip(), classmsg.strip(), areamsg.strip(), roommsg.strip(), itemsmsg.strip(), client)
 
 def messageTEXT(msg):
     print(f'\n{msg}')
@@ -79,9 +83,10 @@ def messageTEXT(msg):
 
 #WRITING PROTOCOL MESSAGES
 def writingProtocol(codes, menuMsg, classe, areas, rooms, itemsmsg, client):
+    print('[Custo de pontos de ação]')
     while True:
-        print(f'MENUPRINT: {menuMsg}')
-        decision = input('Selecione sua próxima ação: ')
+        print(f'{menuMsg}')
+        decision = input('\nSelecione sua próxima ação: ')
 
         if decision not in codes:
             print(f'\n Ação desconhecida. Por favor, faça uma ação válida!')
@@ -112,37 +117,31 @@ def messageUPDT(client):
     while True:
         print(f'\nIniciando a criação de personagem...')
 
-        print('\n.')
-        time.sleep(1)
-        print('\n.')
-        time.sleep(1)
-        print('\n.')
-        time.sleep(1)
+        print('\n...')
+        #time.sleep(1)
         
         name = input('\nQual o nome do seu personagem? ')
 
         while classe != '1' and classe != '2' and classe != '3':
-            print('\nQual a classe do ser personagem?')
-            classe = input('\n1.Mago\n2.Tanque\n3.Suporte\n')
+            print('\nQual a classe do seu personagem?')
+            classe = input('\n1.Mago\n2.Tanque\n3.Suporte\nQual classe você escolhe? ')
         
         print('\nGerando atributos...')
-        print('\n.')
-        time.sleep(1)
-        print('\n.')
-        time.sleep(1)
+        print('\n...')
+        #time.sleep(1)
 
         if classe == '1':
-            atribute = utils.createAtrib([2, 5], [0, 1], [12, 25], [18, 29], [0, 4])
+            atribute = utils.createAtrib([4, 7], [0, 1], [12, 25], [18, 29], [0, 4])
         elif classe == '2':
-            atribute = utils.createAtrib([1, 3], [0, 0], [50, 79], [4, 11], [0, 2])
+            atribute = utils.createAtrib([4, 5], [0, 0], [50, 79], [4, 11], [0, 2])
         elif classe == '3':
-            atribute = utils.createAtrib([4, 7], [0, 3], [11, 22], [3, 15], [8, 19])
+            atribute = utils.createAtrib([4, 8], [0, 3], [11, 22], [3, 15], [8, 19])
 
         print('\nQuase tudo pronto...\n')
         time.sleep(1)
         break
 
-    sendMessages(f'UPDT{name}{classe}{atribute[0]}{atribute[1]}{atribute[2]}{atribute[3]}{atribute[4]}', client)
+    sendMessages(f'UPDT{"{:<20}".format(name)}{"{:<20}".format(classe)}{"{:<2}".format(atribute[0])}{"{:<2}".format(atribute[1])}{"{:<2}".format(atribute[2])}{"{:<2}".format(atribute[3])}{"{:<2}".format(atribute[4])}', client)
 
 #MESSAGE BACKPACK THINGS
 def messageBPAC(client, code):
@@ -151,30 +150,50 @@ def messageBPAC(client, code):
 
 
 #MESSAGE TO MOVE THE PLAYER - MOVE
-def messageMOVE(client, areas, rooms, code):
+def messageMOVE(client, code, areas, rooms):
     area = ''
-    room = ''
+    listRoom = rooms.splitlines()
+    listareas = areas.splitlines()
+    choiceArea = 0
+    choiceRoom = 0
+
+    #print(f'#####################\n{areas}\n##################')
 
     while True:
         print('\nVocê irá para onde?')
 
-        area = input('\n1.Navegar pelas salas\n2.Mudar de área (Você não poderá retornar)')
+        area = input('\n0.Navegar pelas salas\n1.Mudar de área (Você não poderá retornar)\n')
 
-        if area != '1' or area != '2':
+        if area != '0' and area != '1':
             print('\n Ação inválida!')
         else: 
             break
 
-    if area == '1':
+    print('\n')
+
+    if area == '0':
         count = 0
-        for room in rooms:
-            print(f'{count}. {room[count]}')
+        for r in listRoom:
+            print(f'{count}. {r}')
+            count += 1
+        
+        #precisa fazer a verificacao do valor
+        choiceRoom = input('\nPara qual sala voce vai?\n')
+    elif area == '1':
+        count = 0
+        for r in listareas:
+            print(f'{count}. {r}')
+            count += 1
+        
+        #precisa fazer a verificacao do valor
+        choiceArea = input('\nPara qual área voce vai?\n')
 
-        while True:
-            room = input('\nPara qual salá você vai?')
 
-
-    sendMessages(f'{code}{areas[area]}{rooms[room]}', client)
+    #print('\n##############\n')
+    #print(f'\n!!    {(choiceArea)} and  {(choiceRoom)}      !!n')
+    #print(f'\n{listareas[int(choiceArea)]} and {listRoom[int(choiceRoom)]}\n')
+    #{"{:<100}".format(menu)}
+    sendMessages(f'{code}{"{:<100}".format(listareas[int(choiceArea)])}{"{:<100}".format(listRoom[int(choiceRoom)])}', client)
 
 #MESSAGE TO BATTLE MODE - BATT
 def messageBATT(client, code, classe):
@@ -187,7 +206,7 @@ def messageBATT(client, code, classe):
         print('\nQue tipo de ação de combate você fará?')
 
         if classe == '1': #mago
-            action = input('\n1.Ataque')
+            action = input('\n1.Ataque [4]')
             
             if action != '1':
                 print('\n Ação inválida!')
@@ -195,7 +214,7 @@ def messageBATT(client, code, classe):
                 break
 
         elif classe == '2': #tanque
-            action = input('\n1.Ataque\n2.defesa')
+            action = input('\n1.Ataque[4] \n2.defesa [todos os pontos]')
             
             if action != '2' or action != '1':
                 print('\n Ação inválida!')
@@ -203,7 +222,7 @@ def messageBATT(client, code, classe):
                 break
         
         elif classe == '3': #suporte
-            action = input('\n1.Ataque\n3.cura')
+            action = input('\n1.Ataque [4]\n3.curar[3 pontos]')
             
             if action != '1' or action != '3':
                 print('\n Ação inválida!')

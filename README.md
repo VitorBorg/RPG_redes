@@ -7,15 +7,15 @@ Esta sala tem [itens].
 Você tem [actionPointsCurrent]/[totalactionpoints].
 
 1. Movimentar-se
-   1. mudar de sala [5 pontos de ação]
+   1. mudar de sala [3 pontos de ação]
    2. mudar de area [todos os pontos]
 2. Combate
    1. atacar [4 pontos]
    2. defender [todos os pontos]
-   3. curar [4 pontos]
+   3. curar [3 pontos]
 3. Acessar mochila
-   1. procurar itens [3 pontos]
-   2. usar item [3 pontos]
+   1. procurar itens [1 pontos]
+   2. usar item [2 pontos]
 4. Informações do outro jogador [0 pontos]
 5. Finalizar rodada [0 pontos]
 

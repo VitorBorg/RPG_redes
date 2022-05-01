@@ -17,10 +17,10 @@ class rpg:
     def __init__(self, name):
         self.gameName = name
         self.boardTurn = 0
-        self.characters = []
+        #self.characters = []
         self.area = []
 
-        self.playerturn = 0
+        #self.playerturn = 0
         self.players = []
         self.available_moves = ["left","right","up","down"]
 
@@ -33,18 +33,18 @@ class rpg:
         self.area.append(area('O castelo', 'Um velho castelo abandonado - Mas pode-se ouvir gritos de longe...'))
         self.area.append(area('Masmorra', 'Um lugar úmido, fedorento e nada acolhedor.'))
 
-        self.area[0].setRoom(room('Saguão principal', 'Entrada do castelo.'))
-        self.area[0].setRoom(room('Sala de jantar', 'Uma sala de jantar com uma grande mesa e cheia de comida.'))
-        self.area[0].setRoom(room('Torre do norte', 'Uma grande torre com tesouros desconhecidos.'))
-        self.area[0].setRoom(room('Laboratório', 'Um velho laboratório destruído, com vários equipamentos.'))
+        self.area[0].setRoom(room('Saguão principal', 'a entrada do castelo'))
+        self.area[0].setRoom(room('Sala de jantar', 'uma sala de jantar com uma grande mesa e cheia de comida'))
+        self.area[0].setRoom(room('Torre do norte', 'uma grande torre com tesouros desconhecidos'))
+        self.area[0].setRoom(room('Laboratório', 'um velho laboratório destruído, com vários equipamentos'))
 
-        self.area[1].setRoom(room('Celas', 'Celas para prisioneiros.'))
+        self.area[1].setRoom(room('Celas', 'celas para prisioneiros.'))
 
         self.area[0].getRoom()[2].setItem(item('Poção de cura', 'Uma poção solitária, esquecida atrás da porta. Parece que alguém saiu com pressa.',0,2,0,0))
         self.area[0].getRoom()[1].setItem(item('Frango', 'Indescutivelmente em bom estado. Mas parece que os outros alimentos não estão assim...',0,10,0,0))
         self.area[0].getRoom()[3].setItem(item('Pergaminho', '', 0, 10, 0, 0))
         
-        return (f"\n##### BEM VINDO AO RPG {self.gameName}####\n Como jogar:\n\nAproveite!\n")
+        return (f"\n------------------------------\n| BEM VINDO AO RPG {self.gameName} |\n------------------------------\nComo jogar:\nQuando for sua rodada para jogar, você deverá escolher uma opção através de um menu que será exibido, escolhendo o número da respectiva opção. Não esqueça que suas ações são limitadas, você tem pontos de ação.\nExplore o mapa e descubra o que ocorre nesse castelo...\n\nAproveite!")
         #print("you are in: " + self.room + "- have " + str(self.room_enemies) + " enemies alive" + " and you can move to")
         #print(self.available_moves)
 
@@ -72,9 +72,11 @@ class rpg:
         return self.players
 
     def findPlayer(self, client):
+        count = 0
         for c in self.players:
-            if players[c].client == client:
-                return c
+            if c.client == client:
+                return count
+            count += 1
 
     def getCharacters(self):
         return self.characters
@@ -102,7 +104,7 @@ class rpg:
     def menuPrint(self, menu):
         #padrao
         if menu == 'default':
-            return('1.Movimentar-se\n2.Atacar\n3.Curar\n4.Acessar Mochila\n5.Informações da mesa\n6. Finalizar rodada')
+            return('1.Movimentar-se [3]\n2.Combate\n3.Itens\n4.Informações do outro jogador [0]\n5.Finalizar rodada [0]')
         #RODADA DE SELECAO DE PERSONAGEM
         elif menu == 'characters':
             return ('0.Criar personagem')
@@ -117,8 +119,8 @@ class rpg:
             roomEnemys = 'Onde, aparentemente, não há inimigos.'
             if len(roomData.getEnemy()) > 0:
                 roomEnemys = f'Onde tem {len(roomData.getEnemy())} {roomData.getEnemy()[0].getName()}.'
-
-            return(f'Você está na {self.players[num].getPos()[1]}, na area {self.players[num].getPos()[0]}. {roomEnemys}')
+            currentPlayer = self.players[self.boardTurn].getCharac().getStatus()
+            return(f'Você está na {self.players[num].getPos()[1]}, {roomData.getInfo()[1]}, na area {self.players[num].getPos()[0]}. {roomEnemys}\n{currentPlayer[0]}, o {currentPlayer[1]}, tem {currentPlayer[4]} de vida.\nVocê ainda tem {self.players[self.boardTurn].getAction()} de {currentPlayer[2]} pontos de ação na rodada!')
         
     def enemyTurn(self):
         #index = 0
