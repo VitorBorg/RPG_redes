@@ -61,5 +61,9 @@ SERVIDOR
 Envia INFO
 [CODE][menu][areas][rooms][class][items][data]
 
+<<<<<<< HEAD
 Envia TEXT
+=======
+Envia TEXT 
+>>>>>>> 4f18ccc396d99f46c40b95a049862904bda451b7
 [CODE][data]
